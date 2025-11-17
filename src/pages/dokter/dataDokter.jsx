@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import SidebarPerawat from "../../components/perawat/sidebar";
-import { getPasien } from "../../_services/pasien";
+import { getDokter, deleteDokter } from "../../_services/dokter";
 import { Link } from "react-router-dom";
 
 export default function DataDokter() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [search, setSearch] = useState("");
-  const [pasienList, setPasienList] = useState([]);
+  const [dokterList, setDokterList] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const today = new Date().toLocaleDateString("id-ID", {
@@ -18,15 +18,14 @@ export default function DataDokter() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await getPasien();
+        const res = await getDokter();
 
         console.log("RESPONSE BACKEND ===>", res);
 
-        // kalau res bukan array (undefined/null), jadikan array kosong
-        setPasienList(Array.isArray(res) ? res : []);
+        setDokterList(Array.isArray(res) ? res : []);
       } catch (err) {
         console.log("ERROR BACKEND ===>", err);
-        setPasienList([]);
+        setDokterList([]);
       } finally {
         setLoading(false);
       }
@@ -35,31 +34,23 @@ export default function DataDokter() {
     fetchData();
   }, []);
 
-  const filtered = pasienList.filter((p) =>
-    p.nama_lengkap?.toLowerCase().includes(search.toLowerCase())
+  const filtered = dokterList.filter((d) =>
+    d.nama_lengkap?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleEdit = (id) => {
-  console.log("Edit pasien dengan ID:", id);
-  // bisa redirect ke halaman edit, misal:
-  // navigate(`/edit-pasien/${id}`);
-};
-
-const handleDelete = async (id) => {
-  const confirm = window.confirm("Apakah Anda yakin ingin menghapus pasien ini?");
-  if (confirm) {
-    try {
-      await deletePasien(id); // pastikan ada function deletePasien di _services/pasien
-      setPasienList(pasienList.filter(p => p.id !== id)); // update UI setelah delete
-      alert("Data pasien berhasil dihapus");
-    } catch (err) {
-      console.error("Gagal menghapus pasien:", err);
-      alert("Gagal menghapus pasien");
+  const handleDelete = async (id) => {
+    const confirmDelete = window.confirm("Yakin ingin menghapus dokter ini?");
+    if (confirmDelete) {
+      try {
+        await deleteDokter(id);
+        setDokterList(dokterList.filter((d) => d.id !== id));
+        alert("Dokter berhasil dihapus");
+      } catch (err) {
+        console.error("Gagal menghapus dokter:", err);
+        alert("Gagal menghapus dokter");
+      }
     }
-  }
-};
-
- 
+  };
 
   return (
     <div className="flex bg-[#f6f5ef] min-h-screen">
@@ -67,48 +58,34 @@ const handleDelete = async (id) => {
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
       />
-        {/* Konten utama */}
-    <div
-      className={`flex-1 p-6 transition-all duration-300`}
-      style={{ marginLeft: isCollapsed ? "64px" : "320px" }} // sesuaikan lebar sidebar
-    >
-          
-        {/* HEADER */}
+
+      <div
+        className={`flex-1 p-6 transition-all duration-300`}
+        style={{ marginLeft: isCollapsed ? "64px" : "320px" }}
+      >
         <div className="bg-[#b49b50] text-white p-6 rounded-xl shadow-md mb-6">
-          <h1 className="text-2xl font-bold">Data Pasien</h1>
-          <p className="text-sm opacity-80">Analisis dan visualisasi data</p>
+          <h1 className="text-2xl font-bold">Data Dokter</h1>
+          <p className="text-sm opacity-80">Daftar seluruh dokter terdaftar</p>
         </div>
 
-        {/* STAT CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white text-center p-5 rounded-xl shadow border">
-            <p className="text-3xl font-bold text-[#b49b50]">788</p>
-            <p className="text-sm">Total Pasien Bulan Ini</p>
+            <p className="text-3xl font-bold text-[#b49b50]">{dokterList.length}</p>
+            <p className="text-sm">Total Dokter</p>
           </div>
 
           <div className="bg-white text-center p-5 rounded-xl shadow border">
-            <p className="text-3xl font-bold text-green-600">4</p>
-            <p className="text-sm">Pasien Baru Bulan Ini</p>
-          </div>
-
-          <div className="bg-white text-center p-5 rounded-xl shadow border">
-            <p className="text-3xl font-bold text-red-600">6</p>
-            <p className="text-sm">Unique Branches</p>
-          </div>
-
-          <div className="bg-white text-center p-5 rounded-xl shadow border flex items-center justify-center">
             <p className="text-xl font-semibold">{today}</p>
           </div>
         </div>
 
-        {/* TITLE + SEARCH */}
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-[#3e3e3e]">Data Pasien</h2>
+          <h2 className="text-xl font-bold text-[#3e3e3e]">Data Dokter</h2>
 
           <div className="relative w-72">
             <input
               type="text"
-              placeholder="Cari Pasien"
+              placeholder="Cari Dokter"
               className="w-full pl-10 p-2 border rounded-xl bg-[#f8f5e7]"
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -128,63 +105,61 @@ const handleDelete = async (id) => {
           </div>
         </div>
 
-        {/* TABLE */}
         <div className="bg-white p-4 rounded-xl shadow border overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-[#e8dfc8] text-[#3f3f3f]">
               <tr>
-                <th className="p-3">Nomor</th>
-                <th className="p-3">Nama</th>
-                <th className="p-3">Tanggal Lahir</th>
-                <th className="p-3">Jenis Kelamin</th>
-                <th className="p-3">Nomor Telp</th>
-                <th className="p-3">Alamat</th>
+                <th className="p-3">No</th>
+                <th className="p-3">Nomor STR</th>
+                <th className="p-3">Nama Lengkap</th>
+                <th className="p-3">Spesialisasi</th>
+                <th className="p-3">No Telepon</th>
                 <th className="p-3">Email</th>
-                <th className="p-3">Riwayat Alergi</th>
-                <th className="p-3">Tanggal Dibuat</th>
-                <th className="p-3">Action</th> {/* Tambah kolom Action */}
+                <th className="p-3">Status Aktif</th>
+                <th className="p-3">Action</th>
               </tr>
             </thead>
 
             <tbody>
               {filtered.length > 0 ? (
                 filtered.map((item, index) => (
-                  <tr
-                    key={index}
-                    className="border-b hover:bg-[#faf7ee] transition"
-                  >
+                  <tr key={index} className="border-b hover:bg-[#faf7ee] transition">
                     <td className="p-3 text-center">
                       {String(index + 1).padStart(2, "0")}
                     </td>
+                    <td className="p-3">{item.nomor_str}</td>
                     <td className="p-3">{item.nama_lengkap}</td>
-                    <td className="p-3">{item.tanggal_lahir}</td>
-                    <td className="p-3">{item.jenis_kelamin}</td>
+                    <td className="p-3">{item.spesialisasi}</td>
                     <td className="p-3">{item.nomor_telepon}</td>
-                    <td className="p-3">{item.alamat}</td>
                     <td className="p-3">{item.email}</td>
-                    <td className="p-3">{item.riwayat_alergi || "-"}</td>
-                    <td className="p-3">{item.created_at}</td>
-                     <td className="p-3 flex gap-2">
+                    <td className="p-3">
+                      {item.status_aktif === 1 ? (
+                        <span className="text-green-600 font-semibold">Aktif</span>
+                      ) : (
+                        <span className="text-red-600 font-semibold">Nonaktif</span>
+                      )}
+                    </td>
 
-              <Link 
-              to={`/perawat/editPasien/${item.id}`} 
-               className="block px-4 py-2 hover:bg-[#f5e6d3] transition"
-              >
-                Edit
-              </Link>
-          
-              <button
-                className="px-3 py-1 bg-red-500 text-white rounded"
-                onClick={() => handleDelete(item.id)}
-              >
-                Delete
-              </button>
-            </td>
+                    <td className="p-3 flex gap-2">
+                      <Link
+                        to={`/editDokter/${item.id}`}
+                        className="px-3 py-1 bg-blue-500 text-white rounded"
+                      >
+                        Edit
+                      </Link>
+
+                      <button
+                        className="px-3 py-1 bg-red-500 text-white rounded"
+                        onClick={() => handleDelete(item.id)}
+                      >
+                        Hapus
+                      </button>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="9" className="text-center py-6 text-gray-500">
+                  <td colSpan="8" className="text-center py-6 text-gray-500">
                     Tidak ada data ditemukan
                   </td>
                 </tr>
@@ -193,12 +168,9 @@ const handleDelete = async (id) => {
           </table>
         </div>
 
-        {/* PAGINATION */}
         <div className="flex justify-end mt-4 gap-2 text-sm">
           <button className="px-3 py-1 bg-[#e8dfc8] rounded">Previous</button>
           <button className="px-3 py-1 bg-[#b49b50] text-white rounded">1</button>
-          <button className="px-3 py-1 bg-[#e8dfc8] rounded">2</button>
-          <button className="px-3 py-1 bg-[#e8dfc8] rounded">3</button>
           <button className="px-3 py-1 bg-[#e8dfc8] rounded">Next</button>
         </div>
       </div>
