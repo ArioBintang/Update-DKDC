@@ -1,7 +1,5 @@
 import { API } from "../_api";
 
-
-// Fungsi untuk menambahkan dokter baru
 export const addDokter = async (payload) => {
     const {data} = await API.post("/dokter", payload,{
         headers:{
@@ -11,10 +9,6 @@ export const addDokter = async (payload) => {
     return data.data;
 };
 
-
-
-
-// Bisa ditambahkan fungsi lain, misal getDokter, updateDokter, deleteDokter
 export const getDokter = async () => {
     const {data} = await API.get("/dokter",{
         headers:{
@@ -24,4 +18,22 @@ export const getDokter = async () => {
     return data;
 };
 
-
+export const updateDokter = async (id, payload) => {
+    const { data } = await API.put(`/dokter/${id}`, payload, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      },
+    });
+  
+    return data;
+  };
+  
+  export const deleteDokter = async (id) => {
+    const { data } = await API.delete(`/dokter/${id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      },
+    });
+  
+    return data;
+  };
